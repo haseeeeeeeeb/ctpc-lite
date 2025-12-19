@@ -15,9 +15,13 @@
     "reservoir_size": 200000
   },
   "repro": {
-    "benchmark": false,
+    "allow_tf32": false,
+    "cudnn_benchmark": false,
+    "cudnn_deterministic": true,
     "deterministic": true,
-    "seed": 12345
+    "deterministic_warn_only": true,
+    "seed": 12345,
+    "set_cublas_workspace": true
   },
   "run": {
     "name": "phase_d_collect_priors_kdpm2",

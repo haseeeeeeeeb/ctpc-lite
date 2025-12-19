@@ -2,11 +2,11 @@
   "_class_name": "KDPM2DiscreteScheduler",
   "_diffusers_version": "0.6.0",
   "_use_default_values": [
+    "use_karras_sigmas",
+    "timestep_spacing",
     "use_beta_sigmas",
     "prediction_type",
-    "use_exponential_sigmas",
-    "use_karras_sigmas",
-    "timestep_spacing"
+    "use_exponential_sigmas"
   ],
   "beta_end": 0.012,
   "beta_schedule": "scaled_linear",

@@ -1,5 +1,8 @@
 {
-  "config": {
+  "accelerate": {
+    "version": "1.12.0"
+  },
+  "config_resolved": {
     "logging": {
       "max_prompts": 512,
       "prompts_file": "data/prompts_64.txt"
@@ -16,9 +19,13 @@
       "reservoir_size": 200000
     },
     "repro": {
-      "benchmark": false,
+      "allow_tf32": false,
+      "cudnn_benchmark": false,
+      "cudnn_deterministic": true,
       "deterministic": true,
-      "seed": 12345
+      "deterministic_warn_only": true,
+      "seed": 12345,
+      "set_cublas_workspace": true
     },
     "run": {
       "name": "phase_d_collect_priors_kdpm2",
@@ -36,30 +43,44 @@
       "name": "kdpm2"
     }
   },
+  "cuda_device": {
+    "capability": "8.9",
+    "index": 0,
+    "name": "NVIDIA GeForce RTX 4090",
+    "total_mem_gb": 23.988
+  },
+  "diffusers": {
+    "version": "0.36.0"
+  },
   "git": {
-    "commit": null,
-    "status": null
+    "commit": "0e14aa9",
+    "dirty": true
   },
-  "gpu": {
-    "capability": [
-      8,
-      9
-    ],
-    "name": "NVIDIA GeForce RTX 4090"
-  },
-  "pip_freeze": null,
   "platform": {
     "machine": "AMD64",
-    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "python": "3.11.14",
     "release": "10",
     "system": "Windows"
   },
-  "python": "3.11.14 | packaged by Anaconda, Inc. | (main, Oct 21 2025, 18:30:03) [MSC v.1929 64 bit (AMD64)]",
-  "timestamp": "2025-12-19T14:17:59.762647Z",
+  "safetensors": {
+    "version": "0.6.2"
+  },
+  "timestamp_utc": "2025-12-19T16:01:57.712246+00:00",
   "torch": {
+    "allow_tf32_cudnn": false,
+    "allow_tf32_matmul": false,
     "cuda_available": true,
     "cuda_version": "12.8",
+    "cudnn_benchmark": false,
+    "cudnn_deterministic": true,
     "cudnn_version": 91002,
+    "deterministic_algorithms": true,
     "version": "2.9.0+cu128"
+  },
+  "transformers": {
+    "version": "4.57.3"
+  },
+  "xformers": {
+    "version": null
   }
 }

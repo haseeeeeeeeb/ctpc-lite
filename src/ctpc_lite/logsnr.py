@@ -1,7 +1,8 @@
+# src/ctpc_lite/logsnr.py
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional
 
 import numpy as np
 import torch
@@ -19,10 +20,30 @@ def _to_float(x: Any) -> Optional[float]:
     return None
 
 
-def _nearest_index(values: torch.Tensor, target: torch.Tensor) -> int:
-    # values: [N], target: scalar tensor
-    # Return argmin |values - target|
-    diffs = torch.abs(values - target)
+def _as_1d_tensor(x: Any) -> torch.Tensor:
+    if isinstance(x, torch.Tensor):
+        return x.detach().flatten().to(dtype=torch.float32, device="cpu")
+    if isinstance(x, np.ndarray):
+        return torch.from_numpy(x).flatten().to(dtype=torch.float32, device="cpu")
+    return torch.tensor(list(x), dtype=torch.float32).flatten()
+
+
+def _interp_indexed(values: torch.Tensor, idx: float) -> float:
+    # values: [N] on CPU float32, idx in [0, N-1]
+    n = int(values.numel())
+    if n <= 0:
+        raise ValueError("empty values")
+    idx = float(max(0.0, min(float(n - 1), float(idx))))
+    i0 = int(math.floor(idx))
+    i1 = min(n - 1, i0 + 1)
+    w = idx - float(i0)
+    v0 = float(values[i0].item())
+    v1 = float(values[i1].item())
+    return (1.0 - w) * v0 + w * v1
+
+
+def _nearest_index(values: torch.Tensor, target: float) -> int:
+    diffs = torch.abs(values - float(target))
     return int(torch.argmin(diffs).item())
 
 
@@ -30,74 +51,53 @@ def try_compute_sigma_and_logsnr(scheduler, timestep: Any) -> Dict[str, Any]:
     """
     Best-effort extraction of sigma/logSNR from a diffusers scheduler and the UNet timestep input.
 
-    We return a dict with:
-      - sigma (float or None)
-      - logsnr (float or None)
-      - logsnr_type: string describing what we computed ("vp", "sigma_only", "unknown")
-      - notes: string for debugging
-
-    This is intentionally robust: even if we cannot compute sigma/logsnr reliably,
-    we still log raw timestep and continue.
+    Returns keys:
+      - t_float
+      - sigma
+      - logsnr
+      - logsnr_type
+      - notes
     """
     out: Dict[str, Any] = {"sigma": None, "logsnr": None, "logsnr_type": "unknown", "notes": ""}
 
-    t = timestep
-    t_float = _to_float(t)
+    t_float = _to_float(timestep)
     out["t_float"] = t_float
 
-    # Strategy 1: VP-style schedules with alphas_cumprod (common in DDIM/DDPM-like schedulers).
-    # If timestep looks like an integer index, we compute:
-    #   alpha^2 = alphas_cumprod[idx]
-    #   sigma^2 = 1 - alpha^2
-    #   SNR = alpha^2 / sigma^2
+    # ---- Strategy 1: VP/DDPM-style via alphas_cumprod (supports fractional index via interpolation) ----
     try:
-        if hasattr(scheduler, "alphas_cumprod"):
-            ac = scheduler.alphas_cumprod
-            if isinstance(ac, np.ndarray):
-                ac_t = torch.from_numpy(ac)
-            else:
-                ac_t = torch.tensor(ac) if not isinstance(ac, torch.Tensor) else ac
+        if hasattr(scheduler, "alphas_cumprod") and t_float is not None:
+            ac = _as_1d_tensor(scheduler.alphas_cumprod)  # alpha_bar(t) in [0,1]
+            # interpret timestep as an index into alphas_cumprod
+            alpha_bar = _interp_indexed(ac, t_float)
+            alpha_bar = min(max(alpha_bar, 1e-12), 1.0 - 1e-12)
 
-            if t_float is not None:
-                idx = int(round(t_float))
-                if 0 <= idx < ac_t.numel():
-                    alpha2 = float(ac_t[idx].item())
-                    sigma2 = max(1e-12, 1.0 - alpha2)
-                    snr = alpha2 / sigma2
-                    out["sigma"] = math.sqrt(sigma2)
-                    out["logsnr"] = math.log(max(snr, 1e-20))
-                    out["logsnr_type"] = "vp"
-                    out["notes"] = "from alphas_cumprod index"
-                    return out
+            # sigma^2 = 1 - alpha_bar ; SNR = alpha_bar/(1-alpha_bar)
+            sigma2 = max(1e-12, 1.0 - alpha_bar)
+            snr = alpha_bar / sigma2
+
+            out["sigma"] = math.sqrt(sigma2)
+            out["logsnr"] = math.log(max(snr, 1e-30))
+            out["logsnr_type"] = "vp_interp"
+            out["notes"] = "from alphas_cumprod (interp by timestep index)"
+            return out
     except Exception as e:
         out["notes"] = f"alphas_cumprod failed: {e}"
 
-    # Strategy 2: Karras-style schedulers often have `sigmas` and `timesteps`.
-    # Try to map timestep to nearest element in scheduler.timesteps, then use same index for sigmas.
+    # ---- Strategy 2: Karras/EDM-style via sigmas + timesteps (nearest match) ----
     try:
-        if hasattr(scheduler, "sigmas") and hasattr(scheduler, "timesteps"):
-            sigmas = scheduler.sigmas
-            timesteps = scheduler.timesteps
+        if hasattr(scheduler, "sigmas") and hasattr(scheduler, "timesteps") and t_float is not None:
+            sigmas = _as_1d_tensor(scheduler.sigmas)
+            timesteps = _as_1d_tensor(scheduler.timesteps)
 
-            sigmas_t = sigmas if isinstance(sigmas, torch.Tensor) else torch.tensor(sigmas)
-            timesteps_t = timesteps if isinstance(timesteps, torch.Tensor) else torch.tensor(timesteps)
+            idx = _nearest_index(timesteps, t_float)
+            sigma = float(sigmas[idx].item())
 
-            if isinstance(t, torch.Tensor) and t.numel() == 1:
-                t_scalar = t.detach().cpu()
-            else:
-                t_scalar = torch.tensor([t_float]) if t_float is not None else None
-
-            if t_scalar is not None:
-                # timesteps_t could be float or int; take nearest match
-                idx = _nearest_index(timesteps_t.float().cpu(), t_scalar.float().cpu().view(()))
-                sigma = float(sigmas_t[idx].item())
-
-                # In sigma-parameterized EDM/Karras view, a usable SNR proxy is 1/sigma^2.
-                out["sigma"] = sigma
-                out["logsnr"] = -2.0 * math.log(max(sigma, 1e-20))
-                out["logsnr_type"] = "sigma_only"
-                out["notes"] = "from nearest timestep->sigma; logsnr=-2log(sigma)"
-                return out
+            out["sigma"] = sigma
+            # proxy SNR ~ 1/sigma^2  => logSNR = -2 log sigma
+            out["logsnr"] = -2.0 * math.log(max(sigma, 1e-30))
+            out["logsnr_type"] = "sigma_only"
+            out["notes"] = "from nearest(timestep)->sigma; logsnr=-2log(sigma)"
+            return out
     except Exception as e:
         out["notes"] = f"sigmas/timesteps mapping failed: {e}"
 

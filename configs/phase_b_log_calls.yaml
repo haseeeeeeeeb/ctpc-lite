@@ -1,0 +1,32 @@
+run:
+  name: "phase_b_kdpm2_20steps"
+  out_dir: "outputs"
+
+repro:
+  seed: 12345
+  deterministic: true
+  deterministic_warn_only: true
+  cudnn_deterministic: true
+  cudnn_benchmark: false
+  allow_tf32: false
+  set_cublas_workspace: true
+
+model:
+  model_id: "runwayml/stable-diffusion-v1-5"
+  torch_dtype: "float16"
+  device: "cuda"
+
+solver:
+  name: "kdpm2"
+  kwargs: {}
+
+sample:
+  height: 512
+  width: 512
+  num_inference_steps: 20
+  guidance_scale: 7.5
+  num_images_per_prompt: 1
+
+logging:
+  prompts_file: "data/prompts_64.txt"
+  max_prompts: 64

@@ -13,7 +13,7 @@ def main():
 
     blob = torch.load(args.s0, map_location="cpu")
     s0 = blob["s0_scale_step"]
-    site_ids = list(blob["site_paths"].keys())
+    site_ids = blob.get("site_ids", None) or list(blob["site_paths"].keys())
 
     cfg = ScaleFieldConfig(r=args.r, delta=args.delta)
     field = CTPCScaleField(site_ids=site_ids, s0_scale_step=s0, cfg=cfg)

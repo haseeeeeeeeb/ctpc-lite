@@ -1,25 +1,26 @@
 # ctpc_lite/phase_c_default_sites_sd15.py
 from __future__ import annotations
 
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 
 def default_wrap_map_sd15() -> Dict[str, str]:
     """
-    Returns module_path -> site_id for SD1.5 UNet2DConditionModel.
+    module_path -> site_id for SD1.5 UNet2DConditionModel.
 
-    2 blocks:
+    Two transformer blocks:
       - high-res: down_blocks.0.attentions.0.transformer_blocks.0
       - mid     : mid_block.attentions.0.transformer_blocks.0
 
-    4 sites per block:
-      - attn1, attn2
-      - ff.net.0 (GEGLU up-proj), ff.net.2 (down-proj)
+    We quantize the *inputs* to these submodules (post-LN hidden_states):
+      - attn1, attn2 (attention)
+      - ff.net.0 (GEGLU up-proj path)
+      - ff.net.2 (FFN down-proj)
     """
     hi = "down_blocks.0.attentions.0.transformer_blocks.0"
     mid = "mid_block.attentions.0.transformer_blocks.0"
 
-    wrap_map = {
+    return {
         # High-res block
         f"{hi}.attn1": "hi_attn1",
         f"{hi}.attn2": "hi_attn2",
@@ -31,20 +32,28 @@ def default_wrap_map_sd15() -> Dict[str, str]:
         f"{mid}.ff.net.0": "mid_ff_up",
         f"{mid}.ff.net.2": "mid_ff_down",
     }
-    return wrap_map
 
 
 def default_site_ids_sd15() -> List[str]:
-    # stable ordering (useful for scale field)
+    # Stable ordering for scale-field tensors
     return [
         "hi_attn1", "hi_attn2", "hi_ff_up", "hi_ff_down",
         "mid_attn1", "mid_attn2", "mid_ff_up", "mid_ff_down",
     ]
 
 
-def make_dummy_log_s0(site_ids: List[str], log_s0_value: float = 0.0) -> Dict[str, float]:
+def default_site_paths_sd15() -> Dict[str, str]:
     """
-    For Phase C validation: initialize all priors to log(scale)=0 => scale=1.
-    Phase D will replace this with real priors from percentile calibration.
+    site_id -> module_path (inverse of wrap_map).
+    This is what Phase D (priors) and Phase F (wrapping) should use.
     """
-    return {sid: float(log_s0_value) for sid in site_ids}
+    wm = default_wrap_map_sd15()
+    return {site_id: module_path for (module_path, site_id) in wm.items()}
+
+
+def make_dummy_s0_scale_step(site_ids: List[str], step: float = 1.0) -> Dict[str, float]:
+    """
+    Phase C validation only. Step is the symmetric INT8 step size.
+    (Real priors come from Phase D.)
+    """
+    return {sid: float(step) for sid in site_ids}

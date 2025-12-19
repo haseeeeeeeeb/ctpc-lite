@@ -15,6 +15,10 @@ from .io_utils import ensure_dir, load_yaml, read_text_lines, save_json
 from .phase_a_repro import ReproConfig, save_run_metadata, set_reproducibility
 from .schedulers import create_scheduler
 
+# --- UPDATED IMPORTS ---
+from .module_path import get_by_path
+from .phase_c_default_sites_sd15 import default_site_ids_sd15, default_site_paths_sd15
+
 
 # -----------------------------
 # Utilities
@@ -29,47 +33,6 @@ def _dtype_from_str(s: str):
     if s == "float32":
         return torch.float32
     raise ValueError(f"Unknown torch_dtype '{s}'")
-
-
-def resolve_module_by_path(root: torch.nn.Module, path: str) -> torch.nn.Module:
-    """
-    Resolve a module from a dotted path with integer indexes, e.g.
-      "down_blocks.0.attentions.0.transformer_blocks.0.attn1"
-    """
-    cur: Any = root
-    for part in path.split("."):
-        if part.isdigit():
-            cur = cur[int(part)]
-        else:
-            cur = getattr(cur, part)
-    if not isinstance(cur, torch.nn.Module):
-        raise TypeError(f"Resolved object at '{path}' is not a torch.nn.Module (got {type(cur)})")
-    return cur
-
-
-def default_sd15_site_paths() -> Dict[str, str]:
-    """
-    8-site default consistent with your Phase C IDs.
-
-    hi_*  : highest-resolution transformer block (down_blocks[0], channels=320)
-    mid_* : mid_block transformer block (channels=1280)
-
-    attn sites tap Attention module input (post-norm hidden_states).
-    ff sites tap GEGLU.proj input (up-proj) and FF net[2] input (down-proj).
-    """
-    hi_block = "down_blocks.0.attentions.0.transformer_blocks.0"
-    mid_block = "mid_block.attentions.0.transformer_blocks.0"
-
-    return {
-        "hi_attn1": f"{hi_block}.attn1",
-        "hi_attn2": f"{hi_block}.attn2",
-        "hi_ff_up": f"{hi_block}.ff.net.0.proj",
-        "hi_ff_down": f"{hi_block}.ff.net.2",
-        "mid_attn1": f"{mid_block}.attn1",
-        "mid_attn2": f"{mid_block}.attn2",
-        "mid_ff_up": f"{mid_block}.ff.net.0.proj",
-        "mid_ff_down": f"{mid_block}.ff.net.2",
-    }
 
 
 def sample_abs_values(
@@ -230,16 +193,22 @@ def main():
     np_rng = np.random.default_rng(base_seed + 777)
     sample_gen = torch.Generator(device=device).manual_seed(base_seed + 888)
 
-    # Site mapping
+    # --- UPDATED: Site Mapping & Resolution ---
     site_paths = cfg.get("sites", {}).get("mapping", None)
     if not site_paths:
-        site_paths = default_sd15_site_paths()
+        site_paths = default_site_paths_sd15()
 
-    # Resolve modules
+    # Stable site order
+    site_ids = cfg.get("sites", {}).get("site_ids", None) or default_site_ids_sd15()
+
+    # Resolve modules using canonical module_path utility
     sites: Dict[str, torch.nn.Module] = {}
+    # We iterate over site_paths but only keep ones that match our site_ids if filtered,
+    # or generally trust site_paths matches intended keys. 
+    # Usually site_paths keys match default_site_ids.
     for site_id, path in site_paths.items():
         try:
-            sites[site_id] = resolve_module_by_path(pipe.unet, path)
+            sites[site_id] = get_by_path(pipe.unet, path)
         except Exception as e:
             raise RuntimeError(f"Failed to resolve site '{site_id}' at path '{path}': {e}") from e
 
@@ -351,6 +320,8 @@ def main():
             "reservoir_size": reservoir_size,
         },
         "site_paths": site_paths,
+        # --- ADDED: site_ids for stable ordering downstream ---
+        "site_ids": site_ids,
         # These are what later modules should use as s0 (INT8 step size)
         "s0_scale_step": {sid: priors[sid].scale_step for sid in priors},
         # Also save clip thresholds for debugging/plots

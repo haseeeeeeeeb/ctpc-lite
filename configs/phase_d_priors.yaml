@@ -5,7 +5,11 @@ run:
 repro:
   seed: 12345
   deterministic: true
-  benchmark: false
+  deterministic_warn_only: true
+  cudnn_deterministic: true
+  cudnn_benchmark: false
+  allow_tf32: false
+  set_cublas_workspace: true
 
 model:
   model_id: runwayml/stable-diffusion-v1-5
