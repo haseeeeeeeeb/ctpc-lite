@@ -1,0 +1,34 @@
+run:
+  name: "phase_b_log_calls_kdpm2"
+  out_dir: "runs"
+
+repro:
+  seed: 12345
+  deterministic: true
+  benchmark: false
+
+model:
+  pipeline: "stable-diffusion"
+  model_id: "runwayml/stable-diffusion-v1-5"
+  torch_dtype: "float16"
+  device: "cuda"
+
+sample:
+  height: 512
+  width: 512
+  num_inference_steps: 20
+  guidance_scale: 7.5
+  num_images_per_prompt: 1
+
+solver:
+  # Pick ONE target solver. We’ll set the pipeline scheduler accordingly.
+  # Good off-grid / multi-eval candidates: heun, dpmpp_2m, dpmpp_sde, etc.
+  name: "kdpm2" 
+  # Optional scheduler kwargs (passed to from_config if supported)
+  kwargs:
+    use_karras_sigmas: true
+
+logging:
+  prompts_file: "data/prompts_64.txt"
+  max_prompts: 64
+  warmup: 0

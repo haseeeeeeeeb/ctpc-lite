@@ -1,0 +1,35 @@
+{
+  "logging": {
+    "max_prompts": 64,
+    "prompts_file": "data/prompts_64.txt",
+    "warmup": 0
+  },
+  "model": {
+    "device": "cuda",
+    "model_id": "runwayml/stable-diffusion-v1-5",
+    "pipeline": "stable-diffusion",
+    "torch_dtype": "float16"
+  },
+  "repro": {
+    "benchmark": false,
+    "deterministic": true,
+    "seed": 12345
+  },
+  "run": {
+    "name": "phase_b_log_calls_kdpm2",
+    "out_dir": "runs"
+  },
+  "sample": {
+    "guidance_scale": 7.5,
+    "height": 512,
+    "num_images_per_prompt": 1,
+    "num_inference_steps": 20,
+    "width": 512
+  },
+  "solver": {
+    "kwargs": {
+      "use_karras_sigmas": true
+    },
+    "name": "kdpm2"
+  }
+}
