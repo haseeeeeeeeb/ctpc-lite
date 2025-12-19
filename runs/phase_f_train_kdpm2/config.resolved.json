@@ -1,0 +1,49 @@
+{
+  "eval": {
+    "enabled": true,
+    "prompt": "a photo of a golden retriever wearing sunglasses, shallow depth of field",
+    "seed": 12345
+  },
+  "logging": {
+    "max_prompts": 32,
+    "prompts_file": "data/prompts_64.txt"
+  },
+  "model": {
+    "device": "cuda",
+    "model_id": "runwayml/stable-diffusion-v1-5",
+    "torch_dtype": "float16"
+  },
+  "priors": {
+    "s0_path": "runs/phase_d_collect_priors_kdpm2/s0.pt"
+  },
+  "repro": {
+    "seed": 12345
+  },
+  "run": {
+    "name": "phase_f_train_kdpm2",
+    "out_dir": "runs"
+  },
+  "sample": {
+    "guidance_scale": 7.5,
+    "height": 512,
+    "num_inference_steps": 20,
+    "width": 512
+  },
+  "scale_field": {
+    "delta": 2.0,
+    "r": 4
+  },
+  "solver": {
+    "kwargs": {},
+    "name": "kdpm2"
+  },
+  "train": {
+    "epochs": 1,
+    "lip_lambda": 0.0,
+    "log_every": 20,
+    "lr": 0.02,
+    "max_updates": 2000,
+    "save_every": 200,
+    "weight_decay": 0.0
+  }
+}

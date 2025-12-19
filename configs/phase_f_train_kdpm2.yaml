@@ -1,0 +1,46 @@
+run:
+  name: phase_f_train_kdpm2
+  out_dir: runs
+
+repro:
+  seed: 12345
+
+model:
+  model_id: runwayml/stable-diffusion-v1-5
+  torch_dtype: float16
+  device: cuda
+
+solver:
+  name: kdpm2
+  kwargs: {}
+
+sample:
+  height: 512
+  width: 512
+  num_inference_steps: 20
+  guidance_scale: 7.5
+
+logging:
+  prompts_file: data/prompts_64.txt
+  max_prompts: 32
+
+priors:
+  s0_path: runs/phase_d_collect_priors_kdpm2/s0.pt
+
+scale_field:
+  r: 4
+  delta: 2.0
+
+train:
+  epochs: 1
+  lr: 0.02
+  weight_decay: 0.0
+  max_updates: 2000
+  log_every: 20
+  save_every: 200
+  lip_lambda: 0.0
+
+eval:
+  enabled: true
+  seed: 12345
+  prompt: "a photo of a golden retriever wearing sunglasses, shallow depth of field"

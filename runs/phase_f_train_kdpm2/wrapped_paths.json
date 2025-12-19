@@ -1,0 +1,22 @@
+{
+  "wrap_map": {
+    "down_blocks.0.attentions.0.transformer_blocks.0.attn1": "hi_attn1",
+    "down_blocks.0.attentions.0.transformer_blocks.0.attn2": "hi_attn2",
+    "down_blocks.0.attentions.0.transformer_blocks.0.ff.net.0": "hi_ff_up",
+    "down_blocks.0.attentions.0.transformer_blocks.0.ff.net.2": "hi_ff_down",
+    "mid_block.attentions.0.transformer_blocks.0.attn1": "mid_attn1",
+    "mid_block.attentions.0.transformer_blocks.0.attn2": "mid_attn2",
+    "mid_block.attentions.0.transformer_blocks.0.ff.net.0": "mid_ff_up",
+    "mid_block.attentions.0.transformer_blocks.0.ff.net.2": "mid_ff_down"
+  },
+  "wrapped_paths": [
+    "down_blocks.0.attentions.0.transformer_blocks.0.attn1",
+    "down_blocks.0.attentions.0.transformer_blocks.0.attn2",
+    "down_blocks.0.attentions.0.transformer_blocks.0.ff.net.0",
+    "down_blocks.0.attentions.0.transformer_blocks.0.ff.net.2",
+    "mid_block.attentions.0.transformer_blocks.0.attn1",
+    "mid_block.attentions.0.transformer_blocks.0.attn2",
+    "mid_block.attentions.0.transformer_blocks.0.ff.net.0",
+    "mid_block.attentions.0.transformer_blocks.0.ff.net.2"
+  ]
+}

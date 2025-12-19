@@ -1,0 +1,77 @@
+{
+  "config": {
+    "eval": {
+      "enabled": true,
+      "prompt": "a photo of a golden retriever wearing sunglasses, shallow depth of field",
+      "seed": 12345
+    },
+    "logging": {
+      "max_prompts": 32,
+      "prompts_file": "data/prompts_64.txt"
+    },
+    "model": {
+      "device": "cuda",
+      "model_id": "runwayml/stable-diffusion-v1-5",
+      "torch_dtype": "float16"
+    },
+    "priors": {
+      "s0_path": "runs/phase_d_collect_priors_kdpm2/s0.pt"
+    },
+    "repro": {
+      "seed": 12345
+    },
+    "run": {
+      "name": "phase_f_train_kdpm2",
+      "out_dir": "runs"
+    },
+    "sample": {
+      "guidance_scale": 7.5,
+      "height": 512,
+      "num_inference_steps": 20,
+      "width": 512
+    },
+    "scale_field": {
+      "delta": 2.0,
+      "r": 4
+    },
+    "solver": {
+      "kwargs": {},
+      "name": "kdpm2"
+    },
+    "train": {
+      "epochs": 1,
+      "lip_lambda": 0.0,
+      "log_every": 20,
+      "lr": 0.02,
+      "max_updates": 2000,
+      "save_every": 200,
+      "weight_decay": 0.0
+    }
+  },
+  "git": {
+    "commit": "8af615054f1c25fff00ab813130a1d314ae62f5e",
+    "status": "M src/ctpc_lite/__pycache__/phase_c_wrappers.cpython-311.pyc\n M src/ctpc_lite/phase_c_wrappers.py\n?? configs/phase_f_train_kdpm2.yaml\n?? runs/phase_f_train_kdpm2/\n?? src/ctpc_lite/__pycache__/ctpc_context.cpython-311.pyc\n?? src/ctpc_lite/__pycache__/logsnr_utils.cpython-311.pyc\n?? src/ctpc_lite/__pycache__/module_path.cpython-311.pyc\n?? src/ctpc_lite/__pycache__/phase_f_train_ctpc_lite.cpython-311.pyc\n?? src/ctpc_lite/__pycache__/phase_f_train_scale_field.cpython-311.pyc\n?? src/ctpc_lite/__pycache__/quant_wrappers.cpython-311.pyc\n?? src/ctpc_lite/ctpc_context.py\n?? src/ctpc_lite/logsnr_utils.py\n?? src/ctpc_lite/module_path.py\n?? src/ctpc_lite/phase_f_train_ctpc_lite.py\n?? src/ctpc_lite/phase_f_train_scale_field.py\n?? src/ctpc_lite/quant_wrappers.py"
+  },
+  "gpu": {
+    "capability": [
+      8,
+      9
+    ],
+    "name": "NVIDIA GeForce RTX 4090"
+  },
+  "pip_freeze": null,
+  "platform": {
+    "machine": "AMD64",
+    "processor": "Intel64 Family 6 Model 183 Stepping 1, GenuineIntel",
+    "release": "10",
+    "system": "Windows"
+  },
+  "python": "3.11.14 | packaged by Anaconda, Inc. | (main, Oct 21 2025, 18:30:03) [MSC v.1929 64 bit (AMD64)]",
+  "timestamp": "2025-12-19T15:10:00.001220Z",
+  "torch": {
+    "cuda_available": true,
+    "cuda_version": "12.8",
+    "cudnn_version": 91002,
+    "version": "2.9.0+cu128"
+  }
+}
